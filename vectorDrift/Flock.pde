@@ -15,7 +15,6 @@ class Flock {
     for (Block b : blocks) {
       b.display(canvas);
     }
-
   }
   
   void addBlock(Block b) {

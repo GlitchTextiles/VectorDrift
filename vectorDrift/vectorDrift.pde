@@ -8,64 +8,61 @@
 //Input and output displacement is controlled using PVectors, Input is currently set to static. Output is controlled by the flocking algorithm.
 
 
-PImage src, buffer, preBuffer;
-PGraphics helpOverlay;
+PImage src, buffer;
+PGraphics helpOverlay, flockOverlay;
+
 Flock flock;
 
 String outputPath;
 int frameIndex=0;
 
-boolean run = true;
-boolean save = false;
+//control flags
+boolean run = false;
+boolean seq = false;
 boolean loaded = false;
-boolean showFlock = true;
+boolean showFlock = false;
+boolean help = true;
+boolean square = true; // toggles between square tiles or randomized tiles
 
 int block_size=0;
-int gridSpacing_x=0;
-int gridSpacing_y=0;
-int mode = 1;
+int mode = 0;
+int order = 0;
 
 void setup() {
-  size(10, 10);
+  size(600, 400);
   block_size=128;
-  calcGridSpacing();
   frameRate(30);
-  generateHelp(helpOverlay);
-  open_file();
-}
-
-PGraphics generateHelp(PGraphics overlay){
-  return overlay;
+  helpOverlay = generateHelp();
 }
 
 void draw() {
-  if (src !=null && loaded) {
-    if (run) {
-      flock.run();
+  if ( (src != null || loaded) && run) {
+    flock.run();
+    image(buffer, 0, 0);
+    displacePixels(flock);
+    if (seq) {
+      saveFrame(outputPath+nf(frameIndex, 4)+".PNG");
+      frameIndex++;
+    }
+  } else {
+    if (buffer != null) {
       image(buffer, 0, 0);
-      preBuffer=buffer.copy();
-      displacePixels(flock);
-      if (save) {
-        saveFrame(outputPath+nf(frameIndex, 4)+".PNG");
-        frameIndex++;
-      }
-      if (!showFlock) {
-        PGraphics flockRender = createGraphics(width, height);
-        flock.display(flockRender);
-        image(flockRender, 0, 0);
-      }
+    } else {
+      background(0);
     }
   }
+  if (showFlock) renderFlock(flock);
+  if (help) image(helpOverlay, 0, 0);
 }
 
-void calcGridSpacing() {
-  gridSpacing_x=block_size;
-  gridSpacing_y=block_size;
+void renderFlock(Flock _flock) {
+  flockOverlay = createGraphics(width, height);
+  _flock.display(flockOverlay);
+  image(flockOverlay, 0, 0);
 }
 
 void initializeFlock(int _block_size) {
   block_size = _block_size;
-  calcGridSpacing();
   rotational_noise = .1;
   cohesion_coef = block_size*7;
   separate_coef = block_size*3;
@@ -75,39 +72,81 @@ void initializeFlock(int _block_size) {
 
 void makeGrid() {
   flock = new Flock();
-  for (int x = 0; x < int (width/gridSpacing_x)+1; x++) {
-    for (int y = 0; y < int (height/gridSpacing_y)+1; y++) {
-      //flock.addBlock(new Block(gridSpacing_x * x, gridSpacing_y * y, block_size));
-      flock.addBlock(new Block(gridSpacing_x * x, gridSpacing_y * y, int(random(block_size, block_size*2)), int(random(block_size, block_size*2))));
+  for (int x = 0; x < int (width/block_size)+1; x++) {
+    for (int y = 0; y < int (height/block_size)+1; y++) {
+      if (square) {
+        flock.addBlock(new Block(block_size * x, block_size * y, block_size));
+      } else {
+        flock.addBlock(new Block(block_size * x, block_size * y, int(random(block_size, block_size*2)), int(random(block_size, block_size*2))));
+      }
     }
   }
 }
 
 
 void displacePixels(Flock _input) {
-
-  PVector copy = new PVector(0, 0);
-  PVector paste = new PVector(0, 0);
+  PImage preBuffer=buffer.copy();
+  PVector copy = new PVector(), paste = new PVector();
 
   buffer.loadPixels();
 
   //for every block in the flock
   for (Block b : _input.blocks) {
-
-    copy.set(b.origin);
-    paste.set(PVector.sub(copy, b.velocity));
+    
+    // copy/paste sources
+    // b.origin
+    // b.location
+    // b.last_location
+    // PVector.sub(b.origin, b.velocity)
+    // PVector.sub(b.location, b.velocity)
+    // PVector.sub(b.velocity, b.origin)
+    // PVector.sub(b.velocity, b.location)
+    // PVector.add(b.origin, b.velocity)
+    // PVector.add(b.location, b.velocity)
+    // PVector.add(b.velocity, b.origin)
+    // PVector.add(b.velocity, b.location)
+    // PVector.sub(b.last_location, b.location)
+    // PVector.sub(b.location, b.last_location)
+    // PVector.add(b.last_location, b.location)
+    // PVector.add(b.location, b.last_location)
+    // PVector.sub(b.location, b.acceleration)
+    // PVector.sub(b.last_location, b.acceleration)
+    // PVector.sub(b.origin, b.acceleration)
+    
+    switch(mode) {
+    case 0:
+      copy = b.origin;
+      paste = PVector.sub(b.origin, b.velocity);
+      break;
+    case 1:
+      copy = b.location;
+      paste = PVector.sub(b.location, b.velocity);
+      break;
+    case 2:
+      copy = b.last_location;
+      paste = b.location;
+      break;
+    }
 
     for (int _y = 0; _y < b.size_x; _y++) {
       for (int _x = 0; _x < b.size_y; _x++) {
+
         int capture_x = int(width + copy.x + _x)%(width);
         int capture_y = int(height + copy.y + _y)%(height);
         int displacement_x = int(width + paste.x +_x)%(width);
         int displacement_y = int(height + paste.y +_y)%(height);
 
-        //buffer.pixels[displacement_x+(width*displacement_y)]= preBuffer.pixels[capture_x + (capture_y * width)];
-        buffer.pixels[capture_x+(width*capture_y)] = preBuffer.pixels[displacement_x + (displacement_y * width)];
+        switch(order) {
+        case 0:
+          buffer.pixels[displacement_x+(width*displacement_y)] = preBuffer.pixels[capture_x + (capture_y * width)];
+          break;
+        case 1:
+          buffer.pixels[capture_x+(width*capture_y)] = preBuffer.pixels[displacement_x + (displacement_y * width)];
+          break;
+        }
       }
     }
   }
+
   buffer.updatePixels();
 }

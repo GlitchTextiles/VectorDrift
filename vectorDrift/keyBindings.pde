@@ -5,16 +5,22 @@ void keyPressed() {
     run = !run;
     break;
   case'q':
-    mode = 0;
+    order = 0;
     break;
   case'w':
+    order = 1;
+    break;
+  case'y':
+    mode = 0;
+    break;
+  case'u':
     mode = 1;
     break;
-  case'e':
-    mode = 2;
+  case'i':
+    mode = 2  ;
     break;
-  case'r':
-    mode = 3;
+  case 'f':
+    showFlock=!showFlock;
     break;
   case 't': //reset
     if (src!=null) buffer=src.copy();
@@ -37,7 +43,9 @@ void keyPressed() {
   case '6':   
     initializeFlock(256);
     break;
-
+  case 'h':
+    help = !help;
+    break;
   case 'S':
     save_sequence();
   case 's':
@@ -47,7 +55,7 @@ void keyPressed() {
     open_file();
     break;
   case 'x':
-    save = false;
+    seq = false;
     frameIndex=0;
   }
 }

@@ -22,7 +22,6 @@ void load_image(String thePath) {
     surface.setLocation(displayWidth-src.width,0);
     surface.setSize(src.width, src.height);
     buffer = src.copy();
-    preBuffer = src.copy();
     initializeFlock(block_size);
     loaded = true;
   } else {
@@ -32,6 +31,7 @@ void load_image(String thePath) {
 
 
 public void save_file() {
+    run=false;
   selectOutput("Select a file to process:", "outputSelection");
 }
 
@@ -42,11 +42,9 @@ void outputSelection(File output) {
     println("User selected " + output.getAbsolutePath());
     save_still(output.getAbsolutePath());
   }
-  run = true;
 }
 
 void save_still(String thePath) {
-  run=false;
   buffer.save(thePath);
 }
 
@@ -60,7 +58,7 @@ void outputFolderSelection(File output) {
   } else {
     println("User selected " + output.getAbsolutePath());
     outputPath = output.getAbsolutePath();
-    save = true;
+    seq = true;
   }
   frameIndex=0;
 }

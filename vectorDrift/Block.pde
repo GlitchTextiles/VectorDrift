@@ -1,17 +1,17 @@
 //cleaning up Block class
-float rotational_noise=10;
-float cohesion_coef=30;
-float separate_coef=20;
-float align_coef=50;
+float rotational_noise=1;
+float cohesion_coef=2*block_size;
+float separate_coef=2*block_size;
+float align_coef=3*block_size;
 
 float maxSeparationForce=0.25;
 float maxAlignmentForce=0.25;
 float maxCohesionForce=0.25;
 float maxOriginForce=0.25;
 
-float separationWeight=1.25;
+float separationWeight=1.5;
 float alignmentWeight=1.0;
-float cohesionWeight=0.75;
+float cohesionWeight=1.0;
 
 float maxspeed=2.5;
 
@@ -19,19 +19,12 @@ class Block {
 
   PVector origin;
   PVector location;
+  PVector last_location;
   PVector velocity;
   PVector acceleration;
 
   int size_x = 0;
   int size_y = 0;
-
-  //constuctor requires args = size, and x, y coordinates
-  Block(int _x, int _y) {
-    origin = new PVector(_x, _y);
-    location = new PVector(_x, _y);
-    velocity = new PVector(0, 0);
-    acceleration = new PVector(0, 0);
-  }
 
   Block(int _x, int _y, int _size_x, int _size_y) {
     origin = new PVector(_x, _y);
@@ -63,7 +56,7 @@ class Block {
     PVector ali = align(blocks);      // Alignment
     PVector coh = cohesion(blocks);   // Cohesion
 
-    // Arbitrarily weight these forces
+    // Weight these forces
     sep.mult(separationWeight);
     ali.mult(alignmentWeight);
     coh.mult(cohesionWeight);
@@ -81,7 +74,8 @@ class Block {
   }
 
   // Method to update location
-  void update() {  
+  void update() {
+    last_location=location.copy();
     velocity.add(acceleration);
     velocity.limit(maxspeed);
     velocity.rotate(random(-PI, PI) * rotational_noise);
@@ -108,7 +102,7 @@ class Block {
   }
 
   //////////////////////////////////////////////////////////////
-  // Adds a springlike fore to the origin
+  // Adds a springlike force to the origin
 
   PVector origin() {
     PVector force = PVector.sub(this.origin, this.location);
