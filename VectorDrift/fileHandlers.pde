@@ -49,7 +49,7 @@ void save_still(String thePath) {
 }
 
 public void save_sequence() {
-  selectOutput("Select a file to process:", "outputFolderSelection");
+  selectFolder("Select a file to process:", "outputFolderSelection");
 }
 
 void outputFolderSelection(File output) {
